@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RAG Question Answering</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <div class="container">
+        <h1>RAG SYSTEM</h1>
+        <div class="chat-container">
+            <div id="chat-box" class="chat-box"></div>
+            <div class="input-area">
+                <input type="text" id="question-input" placeholder="place ur question here ...... ">
+                <button id="ask-button">Send</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.getElementById('ask-button').addEventListener('click', askQuestion);
+        document.getElementById('question-input').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                askQuestion();
+            }
+        });
+
+        function askQuestion() {
+            const question = document.getElementById('question-input').value.trim();
+            if (!question) return;
+
+            // عرض السؤال في واجهة المحادثة
+            addMessage('user', question);
+            document.getElementById('question-input').value = '';
+
+            // إرسال السؤال إلى الخادم
+            fetch('/ask', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ question: question })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    addMessage('bot', data.answer);
+                } else {
+                    addMessage('bot', 'Error: ' + data.error);
+                }
+            })
+            .catch(error => {
+                addMessage('bot', 'Server Error');
+                console.error('Error:', error);
+            });
+        }
+
+        function addMessage(sender, text) {
+            const chatBox = document.getElementById('chat-box');
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${sender}`;
+            
+            const senderName = sender === 'user' ? 'YOU' : 'AI system:';
+            messageDiv.innerHTML = `<strong>${senderName}:</strong> ${text}`;
+            
+            chatBox.appendChild(messageDiv);
+            chatBox.scrollTop = chatBox.scrollHeight;
+        }
+    </script>
+</body>
+</html>
